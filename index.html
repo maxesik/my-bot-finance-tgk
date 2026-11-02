@@ -1,704 +1,516 @@
 <!DOCTYPE html>
 <html lang="ru" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Мои Накопления & Финансы</title>
-  
-  <!-- Telegram WebApp SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Google Font Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            iosBg: '#0b0f19',
-            iosCard: 'rgba(23, 31, 48, 0.7)',
-            iosBorder: 'rgba(255, 255, 255, 0.08)',
-          }
-        }
-      }
-    }
-  </script>
-
-  <style>
-    body {
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      -webkit-user-select: none;
-      background-color: #090d16;
-      color: #f3f4f6;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Мои Накопления & Финансы</title>
     
-    /* Эффект матового стекла (Glassmorphism) */
-    .glass-card {
-      background: rgba(22, 30, 46, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
-    }
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    .glass-input {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-    }
-
-    .glass-input:focus {
-      border-color: #6366f1;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
-    }
-
-    ::-webkit-scrollbar {
-      width: 4px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-    }
-  </style>
-</head>
-<body class="font-sans antialiased min-h-screen pb-12 pt-safe">
-
-  <!-- Главный Контейнер -->
-  <div class="max-w-md mx-auto px-4 pt-4 space-y-5">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/lib/index.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Шапка / Выбор Месяца -->
-    <header class="flex items-center justify-between glass-card p-4 rounded-2xl">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xl font-bold border border-indigo-500/30">
-          <i class="fa-solid fa-piggy-bank"></i>
-        </div>
-        <div>
-          <h1 class="text-base font-bold text-white tracking-wide">Мои Финансы</h1>
-          <p class="text-xs text-gray-400">Управление бюджетом</p>
-        </div>
-      </div>
-      
-      <!-- Селектор месяца -->
-      <div class="relative">
-        <input type="month" id="monthPicker" class="glass-input text-xs font-semibold px-3 py-2 rounded-xl text-gray-200 cursor-pointer appearance-none">
-      </div>
-    </header>
-
-    <!-- Основные Финансовые Показатели -->
-    <section class="glass-card rounded-3xl p-5 relative overflow-hidden">
-      <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-      <!-- Прогресс Накоплений -->
-      <div class="mb-5">
-        <div class="flex justify-between items-baseline mb-1">
-          <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Отложено в цель</span>
-          <span id="savingsPercentage" class="text-xs font-bold text-emerald-400">0%</span>
-        </div>
-        <div class="flex justify-between items-end mb-3">
-          <div class="text-3xl font-extrabold text-white tracking-tight" id="savedAmount">0 ₽</div>
-          <div class="text-xs text-gray-400 text-right">
-            цель: <span id="goalTargetDisplay" class="font-semibold text-gray-300">0 ₽</span>
-            <button onclick="openGoalModal()" class="ml-1 text-indigo-400 hover:text-indigo-300">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Прогресс-бар -->
-        <div class="w-full h-3 bg-gray-800/80 rounded-full overflow-hidden p-0.5 border border-white/5">
-          <div id="progressBar" class="h-full bg-gradient-to-r from-indigo-500 via-emerald-400 to-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
-        </div>
-      </div>
-
-      <!-- Карточки Доход / Расход / Чистый Баланс -->
-      <div class="grid grid-cols-3 gap-2 pt-3 border-t border-white/5 text-center">
-        <div class="bg-white/5 p-2.5 rounded-2xl border border-white/5">
-          <div class="flex items-center justify-center space-x-1 text-emerald-400 mb-1">
-            <i class="fa-solid fa-arrow-down text-[10px]"></i>
-            <span class="text-[11px] font-medium text-gray-400">Доходы</span>
-          </div>
-          <p id="totalIncome" class="text-xs sm:text-sm font-bold text-emerald-400">0 ₽</p>
-        </div>
-
-        <div class="bg-white/5 p-2.5 rounded-2xl border border-white/5">
-          <div class="flex items-center justify-center space-x-1 text-rose-400 mb-1">
-            <i class="fa-solid fa-arrow-up text-[10px]"></i>
-            <span class="text-[11px] font-medium text-gray-400">Расходы</span>
-          </div>
-          <p id="totalExpense" class="text-xs sm:text-sm font-bold text-rose-400">0 ₽</p>
-        </div>
-
-        <div class="bg-white/5 p-2.5 rounded-2xl border border-white/5">
-          <div class="flex items-center justify-center space-x-1 text-indigo-400 mb-1">
-            <i class="fa-solid fa-wallet text-[10px]"></i>
-            <span class="text-[11px] font-medium text-gray-400">Остаток</span>
-          </div>
-          <p id="netBalance" class="text-xs sm:text-sm font-bold text-white">0 ₽</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Быстрые действия (Кнопки Доход / Расход / Отложить) -->
-    <div class="grid grid-cols-3 gap-2">
-      <button onclick="openAddModal('income')" class="glass-card active:scale-95 transition-transform duration-150 p-3 rounded-2xl flex flex-col items-center justify-center space-y-1 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/10">
-        <div class="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center text-xs">
-          <i class="fa-solid fa-plus"></i>
-        </div>
-        <span class="text-xs text-gray-100 font-medium">Доход</span>
-      </button>
-
-      <button onclick="openAddModal('expense')" class="glass-card active:scale-95 transition-transform duration-150 p-3 rounded-2xl flex flex-col items-center justify-center space-y-1 text-rose-400 border border-rose-500/20 hover:bg-rose-500/10">
-        <div class="w-7 h-7 rounded-lg bg-rose-500/20 flex items-center justify-center text-xs">
-          <i class="fa-solid fa-minus"></i>
-        </div>
-        <span class="text-xs text-gray-100 font-medium">Расход</span>
-      </button>
-
-      <button onclick="openAddModal('savings')" class="glass-card active:scale-95 transition-transform duration-150 p-3 rounded-2xl flex flex-col items-center justify-center space-y-1 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/10">
-        <div class="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center text-xs">
-          <i class="fa-solid fa-vault"></i>
-        </div>
-        <span class="text-xs text-gray-100 font-medium">Отложить</span>
-      </button>
-    </div>
-
-    <!-- Аналитика / Диаграмма категорий -->
-    <section class="glass-card rounded-3xl p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-300">Аналитика категорий</h2>
-        <div class="inline-flex rounded-xl bg-gray-900/60 p-1 border border-white/5">
-          <button id="chartTabExpense" onclick="switchChartTab('expense')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg text-rose-400 bg-white/10 transition-all">Расходы</button>
-          <button id="chartTabIncome" onclick="switchChartTab('income')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg text-gray-400 transition-all">Доходы</button>
-        </div>
-      </div>
-
-      <div class="relative flex items-center justify-center min-h-[180px]">
-        <canvas id="categoryChart" class="max-h-[180px]"></canvas>
-        <p id="noChartData" class="absolute text-xs text-gray-500 hidden">Нет данных за выбранный период</p>
-      </div>
-    </section>
-
-    <!-- Список транзакций -->
-    <section class="glass-card rounded-3xl p-5">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-sm font-semibold text-gray-300">История операций</h2>
-        <span id="transactionCount" class="text-xs text-gray-500">0 записей</span>
-      </div>
-
-      <div id="transactionList" class="space-y-3 max-h-80 overflow-y-auto pr-1">
-        <!-- Генерируется через JS -->
-      </div>
-    </section>
-
-    <!-- Резервное копирование -->
-    <section class="glass-card rounded-2xl p-4 flex items-center justify-between text-xs text-gray-400">
-      <span>Резервная копия:</span>
-      <div class="flex space-x-2">
-        <button onclick="exportData()" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 font-medium transition-colors border border-white/5">
-          <i class="fa-solid fa-download mr-1"></i> Экспорт
-        </button>
-        <button onclick="triggerImport()" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 font-medium transition-colors border border-white/5">
-          <i class="fa-solid fa-upload mr-1"></i> Импорт
-        </button>
-        <input type="file" id="importFileInput" onchange="importData(event)" class="hidden" accept=".json">
-      </div>
-    </section>
-
-  </div>
-
-  <!-- МОДАЛЬНОЕ ОКНО: Цель накоплений -->
-  <div id="modalGoal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/10 space-y-4">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-white text-base">Цель накоплений на месяц</h3>
-        <button onclick="closeModal('modalGoal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-400 mb-1">Сумма цели (₽)</label>
-        <input type="number" id="inputGoal" placeholder="Например: 50000" class="w-full glass-input p-3 rounded-2xl text-lg font-bold">
-      </div>
-      <button onclick="saveGoal()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-98 rounded-2xl font-bold text-white text-sm shadow-lg shadow-indigo-600/30 transition">
-        Сохранить цель
-      </button>
-    </div>
-  </div>
-
-  <!-- ЕДИНОЕ МОДАЛЬНОЕ ОКНО: Добавление операции (Доход / Расход / Накопление) -->
-  <div id="modalTransaction" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/10 space-y-4">
-      <div class="flex justify-between items-center">
-        <h3 id="modalTransactionTitle" class="font-bold text-white text-base">Новая операция</h3>
-        <button onclick="closeModal('modalTransaction')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-      <input type="hidden" id="inputTxType">
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1">Сумма (₽)</label>
-          <input type="number" id="inputTxAmount" placeholder="0" class="w-full glass-input p-3 rounded-2xl text-lg font-bold">
-        </div>
-        <div id="categoryContainer">
-          <label class="block text-xs font-medium text-gray-400 mb-1">Категория</label>
-          <select id="inputTxCategory" class="w-full glass-input p-3 rounded-2xl text-sm">
-            <!-- Динамически заполняется в JS -->
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1">Описание / Заметка</label>
-          <input type="text" id="inputTxTitle" placeholder="Аванс, Продукты, В копилку..." class="w-full glass-input p-3 rounded-2xl text-sm">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-400 mb-1">Дата</label>
-          <input type="date" id="inputTxDate" class="w-full glass-input p-3 rounded-2xl text-sm">
-        </div>
-      </div>
-      <button id="btnSaveTransaction" onclick="saveTransaction()" class="w-full py-3.5 rounded-2xl font-bold text-white text-sm transition">
-        Сохранить
-      </button>
-    </div>
-  </div>
-
-  <!-- Уведомления (Toast) -->
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 glass-card px-4 py-2.5 rounded-full text-xs font-semibold text-white shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center space-x-2">
-    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
-    <span id="toastMsg">Успешно</span>
-  </div>
-
-  <script>
-    // Категории операций по умолчанию
-    const CATEGORIES = {
-      income: [
-        '💼 Зарплата',
-        '💻 Фриланс',
-        '📈 Инвестиции',
-        '🎁 Подарки',
-        '✨ Прочее'
-      ],
-      expense: [
-        '🛒 Продукты',
-        '🏠 Жилье / ЖКХ',
-        '🚗 Транспорт',
-        '☕ Кафе / Развлечения',
-        '💊 Здоровье',
-        '🛍️ Покупки',
-        '📦 Прочее'
-      ]
-    };
-
-    let appState = {
-      goals: {},
-      transactions: []
-    };
-
-    let selectedMonth = '';
-    let currentChartTab = 'expense';
-    let categoryChart = null;
-
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-      if (tg.setHeaderColor) tg.setHeaderColor('#0b0f19');
-      if (tg.setBackgroundColor) tg.setBackgroundColor('#0b0f19');
-    }
-
-    window.onload = function() {
-      const today = new Date();
-      const currentMonthStr = today.toISOString().slice(0, 7);
-      
-      const monthPicker = document.getElementById('monthPicker');
-      monthPicker.value = currentMonthStr;
-      selectedMonth = currentMonthStr;
-
-      document.getElementById('inputTxDate').value = today.toISOString().split('T')[0];
-
-      loadStorageData();
-
-      monthPicker.addEventListener('change', (e) => {
-        selectedMonth = e.target.value;
-        renderApp();
-      });
-
-      renderApp();
-    };
-
-    function loadStorageData() {
-      try {
-        const saved = localStorage.getItem('savings_app_data');
-        if (saved) {
-          appState = JSON.parse(saved);
-        }
-      } catch (e) {
-        console.error('Ошибка загрузки данных:', e);
-      }
-    }
-
-    function saveStorageData() {
-      try {
-        localStorage.setItem('savings_app_data', JSON.stringify(appState));
-      } catch (e) {
-        console.error('Ошибка сохранения данных:', e);
-      }
-    }
-
-    function renderApp() {
-      const filtered = appState.transactions.filter(t => t.date.startsWith(selectedMonth));
-      
-      let totalIncome = 0;
-      let totalExpense = 0;
-      let totalSaved = 0;
-
-      const categoryTotals = {
-        income: {},
-        expense: {}
-      };
-
-      filtered.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
-        if (t.type === 'income') {
-          totalIncome += amt;
-          categoryTotals.income[t.category] = (categoryTotals.income[t.category] || 0) + amt;
-        } else if (t.type === 'expense') {
-          totalExpense += amt;
-          categoryTotals.expense[t.category] = (categoryTotals.expense[t.category] || 0) + amt;
-        } else if (t.type === 'savings') {
-          totalSaved += amt;
-        }
-      });
-
-      const netBalance = totalIncome - totalExpense - totalSaved;
-      const goalTarget = appState.goals[selectedMonth] || 0;
-
-      document.getElementById('savedAmount').innerText = formatCurrency(totalSaved);
-      document.getElementById('goalTargetDisplay').innerText = formatCurrency(goalTarget);
-      document.getElementById('totalIncome').innerText = formatCurrency(totalIncome);
-      document.getElementById('totalExpense').innerText = formatCurrency(totalExpense);
-      document.getElementById('netBalance').innerText = formatCurrency(netBalance);
-
-      let percentage = goalTarget > 0 ? Math.round((totalSaved / goalTarget) * 100) : 0;
-      document.getElementById('savingsPercentage').innerText = `${percentage}%`;
-      document.getElementById('progressBar').style.width = `${Math.min(percentage, 100)}%`;
-
-      renderTransactionList(filtered);
-      renderChart(categoryTotals[currentChartTab]);
-    }
-
-    function renderTransactionList(transactions) {
-      const container = document.getElementById('transactionList');
-      const countLabel = document.getElementById('transactionCount');
-      container.innerHTML = '';
-      
-      countLabel.innerText = `${transactions.length} записей`;
-
-      if (transactions.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-8 text-gray-500 text-xs">
-            <i class="fa-regular fa-folder-open text-2xl mb-2 opacity-50"></i>
-            <p>Нет операций в этом месяце</p>
-          </div>
-        `;
-        return;
-      }
-
-      const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      sorted.forEach(item => {
-        let iconClass = '';
-        let amountPrefix = '';
-        let amountColor = '';
-
-        if (item.type === 'income') {
-          iconClass = 'fa-arrow-down text-emerald-400 bg-emerald-500/10';
-          amountPrefix = '+';
-          amountColor = 'text-emerald-400';
-        } else if (item.type === 'expense') {
-          iconClass = 'fa-arrow-up text-rose-400 bg-rose-500/10';
-          amountPrefix = '-';
-          amountColor = 'text-rose-400';
-        } else {
-          iconClass = 'fa-vault text-indigo-400 bg-indigo-500/10';
-          amountPrefix = '•';
-          amountColor = 'text-indigo-400';
-        }
-
-        const el = document.createElement('div');
-        el.className = 'glass-card p-3 rounded-2xl flex items-center justify-between border border-white/5';
-        el.innerHTML = `
-          <div class="flex items-center space-x-3">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs ${iconClass}">
-              <i class="fa-solid ${iconClass.split(' ')[0]}"></i>
-            </div>
-            <div>
-              <p class="text-xs font-semibold text-white">${escapeHtml(item.title || item.category)}</p>
-              <p class="text-[10px] text-gray-400">${formatDate(item.date)} ${item.category ? '• ' + item.category : ''}</p>
-            </div>
-          </div>
-          <div class="flex items-center space-x-3">
-            <span class="text-xs font-bold ${amountColor}">${amountPrefix}${formatCurrency(item.amount)}</span>
-            <button onclick="deleteTransaction('${item.id}')" class="text-gray-500 hover:text-rose-400 transition-colors p-1">
-              <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
-          </div>
-        `;
-        container.appendChild(el);
-      });
-    }
-
-    function switchChartTab(type) {
-      currentChartTab = type;
-      const btnExpense = document.getElementById('chartTabExpense');
-      const btnIncome = document.getElementById('chartTabIncome');
-
-      if (type === 'expense') {
-        btnExpense.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-lg text-rose-400 bg-white/10 transition-all';
-        btnIncome.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-lg text-gray-400 transition-all';
-      } else {
-        btnIncome.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-lg text-emerald-400 bg-white/10 transition-all';
-        btnExpense.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-lg text-gray-400 transition-all';
-      }
-
-      renderApp();
-    }
-
-    function renderChart(categoryTotals) {
-      const ctx = document.getElementById('categoryChart').getContext('2d');
-      const noDataEl = document.getElementById('noChartData');
-      
-      const labels = Object.keys(categoryTotals || {});
-      const data = Object.values(categoryTotals || {});
-
-      if (labels.length === 0) {
-        if (categoryChart) categoryChart.destroy();
-        noDataEl.classList.remove('hidden');
-        return;
-      } else {
-        noDataEl.classList.add('hidden');
-      }
-
-      if (categoryChart) {
-        categoryChart.destroy();
-      }
-
-      const palette = currentChartTab === 'expense' 
-        ? ['#f43f5e', '#fb923c', '#facc15', '#a855f7', '#ec4899', '#3b82f6']
-        : ['#10b981', '#6366f1', '#06b6d4', '#84cc16', '#eab308'];
-
-      categoryChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: palette,
-            borderWidth: 0,
-            hoverOffset: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                color: '#9ca3af',
-                font: { family: 'Inter', size: 10 },
-                boxWidth: 10,
-                padding: 8
-              }
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        iosBg: '#0b0f19',
+                        iosCard: '#161e2e',
+                        iosCardSecondary: '#1f293d',
+                        iosGreen: '#30d158',
+                        iosRed: '#ff453a',
+                        iosBlue: '#0a84ff',
+                        iosGray: '#8e8e93'
+                    }
+                }
             }
-          },
-          cutout: '68%'
         }
-      });
-    }
-
-    function openAddModal(type) {
-      const modal = document.getElementById('modalTransaction');
-      const title = document.getElementById('modalTransactionTitle');
-      const typeInput = document.getElementById('inputTxType');
-      const selectCat = document.getElementById('inputTxCategory');
-      const catContainer = document.getElementById('categoryContainer');
-      const btnSave = document.getElementById('btnSaveTransaction');
-
-      typeInput.value = type;
-      selectCat.innerHTML = '';
-
-      if (type === 'income') {
-        title.innerText = 'Добавить доход';
-        catContainer.classList.remove('hidden');
-        CATEGORIES.income.forEach(c => {
-          selectCat.innerHTML += `<option value="${c}">${c}</option>`;
-        });
-        btnSave.className = 'w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:scale-98 rounded-2xl font-bold text-white text-sm shadow-lg shadow-emerald-600/30 transition';
-      } else if (type === 'expense') {
-        title.innerText = 'Добавить расход';
-        catContainer.classList.remove('hidden');
-        CATEGORIES.expense.forEach(c => {
-          selectCat.innerHTML += `<option value="${c}">${c}</option>`;
-        });
-        btnSave.className = 'w-full py-3.5 bg-rose-600 hover:bg-rose-500 active:scale-98 rounded-2xl font-bold text-white text-sm shadow-lg shadow-rose-600/30 transition';
-      } else {
-        title.innerText = 'Отложить в накопления';
-        catContainer.classList.add('hidden');
-        btnSave.className = 'w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-98 rounded-2xl font-bold text-white text-sm shadow-lg shadow-indigo-600/30 transition';
-      }
-
-      modal.classList.remove('hidden');
-    }
-
-    function saveTransaction() {
-      const type = document.getElementById('inputTxType').value;
-      const amount = parseFloat(document.getElementById('inputTxAmount').value);
-      const category = type === 'savings' ? 'Накопления' : document.getElementById('inputTxCategory').value;
-      const title = document.getElementById('inputTxTitle').value.trim();
-      const date = document.getElementById('inputTxDate').value;
-
-      if (isNaN(amount) || amount <= 0 || !date) {
-        showToast('Заполните сумму и дату', 'error');
-        return;
-      }
-
-      const item = {
-        id: 'tx_' + Date.now(),
-        type,
-        amount,
-        category,
-        title: title || (type === 'savings' ? 'Отложено в цель' : category),
-        date
-      };
-
-      appState.transactions.push(item);
-      saveStorageData();
-      renderApp();
-      closeModal('modalTransaction');
-      
-      const msg = type === 'income' ? 'Доход добавлен' : type === 'expense' ? 'Расход добавлен' : 'Средства отложены';
-      showToast(msg);
-
-      document.getElementById('inputTxAmount').value = '';
-      document.getElementById('inputTxTitle').value = '';
-    }
-
-    function saveGoal() {
-      const val = parseFloat(document.getElementById('inputGoal').value);
-      if (isNaN(val) || val < 0) {
-        showToast('Введите корректную сумму', 'error');
-        return;
-      }
-      appState.goals[selectedMonth] = val;
-      saveStorageData();
-      renderApp();
-      closeModal('modalGoal');
-      showToast('Цель обновлена');
-    }
-
-    function deleteTransaction(id) {
-      appState.transactions = appState.transactions.filter(t => t.id !== id);
-      saveStorageData();
-      renderApp();
-      showToast('Запись удалена');
-    }
-
-    function openGoalModal() {
-      document.getElementById('inputGoal').value = appState.goals[selectedMonth] || '';
-      document.getElementById('modalGoal').classList.remove('hidden');
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
-
-    function exportData() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `finance_backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      showToast('Резервная копия скачана');
-    }
-
-    function triggerImport() {
-      document.getElementById('importFileInput').click();
-    }
-
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (imported && (imported.transactions || imported.goals)) {
-            appState = imported;
-            saveStorageData();
-            renderApp();
-            showToast('Данные импортированы');
-          } else {
-            showToast('Неверный формат файла', 'error');
-          }
-        } catch (err) {
-          showToast('Ошибка чтения файла', 'error');
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
         }
-      };
-      reader.readAsText(file);
-    }
+        .glass-card {
+            background: rgba(22, 30, 46, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        input, select {
+            background-color: #111827 !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        input:focus, select:focus {
+            border-color: #0a84ff !important;
+            outline: none;
+        }
+        /* Скрытие полосы прокрутки */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="antialiased pb-12">
 
-    function formatCurrency(val) {
-      return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val);
-    }
+    <div class="max-w-md mx-auto px-4 pt-6">
+        
+        <!-- Шапка -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Копилка & Бюджет</h1>
+                <p class="text-xs text-gray-400 mt-0.5">Все данные сохраняются на устройстве</p>
+            </div>
+            <button onclick="resetData()" class="text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full border border-red-500/20 active:scale-95 transition">
+                <i class="fa-solid fa-trash-can mr-1"></i> Сброс
+            </button>
+        </div>
 
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      return `${parts[2]}.${parts[1]}`;
-    }
+        <!-- Главный баланс и Цель -->
+        <div class="glass-card rounded-3xl p-5 mb-5 shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-xs font-medium uppercase tracking-wider text-gray-400">Чистый баланс</span>
+                    <h2 id="totalBalance" class="text-3xl font-extrabold tracking-tight mt-1">0 ₽</h2>
+                </div>
+                <button onclick="openGoalModal()" class="bg-iosCardSecondary hover:bg-gray-700 text-xs px-3 py-1.5 rounded-xl border border-white/5 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-bullseye text-blue-400"></i> Цель
+                </button>
+            </div>
 
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
+            <!-- Прогресс накопления -->
+            <div class="mt-5 pt-4 border-t border-white/5">
+                <div class="flex justify-between text-xs mb-1.5">
+                    <span class="text-gray-400">Цель: <span id="goalTitleText" class="text-white font-medium">Новая машина</span></span>
+                    <span id="goalPercent" class="font-semibold text-iosGreen">0%</span>
+                </div>
+                <div class="w-full bg-gray-800 h-2.5 rounded-full overflow-hidden p-0.5">
+                    <div id="goalProgressBar" class="bg-gradient-to-r from-green-500 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-gray-400 mt-1.5">
+                    <span>Накоплено: <strong id="currentSaved" class="text-white">0 ₽</strong></span>
+                    <span>Цель: <strong id="goalTargetText" class="text-white">100 000 ₽</strong></span>
+                </div>
+            </div>
+        </div>
 
-    function showToast(msg, type = 'success') {
-      const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toastMsg');
-      const toastIcon = document.getElementById('toastIcon');
+        <!-- Кнопки быстрого добавления -->
+        <div class="grid grid-cols-2 gap-3 mb-5">
+            <button onclick="openModal('income')" class="bg-green-500/15 hover:bg-green-500/25 border border-green-500/30 text-green-400 py-3.5 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-98">
+                <i class="fa-solid fa-circle-plus text-base"></i> Доход
+            </button>
+            <button onclick="openModal('expense')" class="bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 py-3.5 px-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition active:scale-98">
+                <i class="fa-solid fa-circle-minus text-base"></i> Расход
+            </button>
+        </div>
 
-      toastMsg.innerText = msg;
-      if (type === 'error') {
-        toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400';
-      } else {
-        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
-      }
+        <!-- Аналитика / Диаграмма -->
+        <div class="glass-card rounded-3xl p-5 mb-5">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-semibold text-gray-200">Структура финансов</h3>
+                <div class="flex bg-black/30 p-1 rounded-xl text-xs">
+                    <button id="chartTabIncome" onclick="switchChartTab('income')" class="px-3 py-1 rounded-lg bg-blue-600 text-white transition font-medium">Доходы</button>
+                    <button id="chartTabExpense" onclick="switchChartTab('expense')" class="px-3 py-1 rounded-lg text-gray-400 transition font-medium">Расходы</button>
+                </div>
+            </div>
+            <div class="relative w-full h-48 flex items-center justify-center">
+                <canvas id="financeChart"></canvas>
+            </div>
+        </div>
 
-      toast.classList.remove('opacity-0', 'pointer-events-none');
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'pointer-events-none');
-      }, 2500);
-    }
-  </script>
+        <!-- История операций -->
+        <div class="glass-card rounded-3xl p-5 mb-6">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-semibold text-gray-200">История операций</h3>
+                <span id="txCount" class="text-xs text-gray-400">0 записей</span>
+            </div>
+            <div id="transactionsList" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                <!-- Сюда динамически добавляются транзакции -->
+                <div class="text-center py-6 text-gray-500 text-xs">История пока пуста</div>
+            </div>
+        </div>
+
+        <!-- Резервное копирование -->
+        <div class="flex gap-2">
+            <button onclick="exportJSON()" class="flex-1 bg-iosCardSecondary hover:bg-gray-700 text-xs py-3 rounded-2xl text-gray-300 font-medium border border-white/5 transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-download"></i> Экспорт бэкапа
+            </button>
+            <label class="flex-1 bg-iosCardSecondary hover:bg-gray-700 text-xs py-3 rounded-2xl text-gray-300 font-medium border border-white/5 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-upload"></i> Импорт бэкапа
+                <input type="file" id="importFile" accept=".json" onchange="importJSON(event)" class="hidden">
+            </label>
+        </div>
+
+    </div>
+
+    <!-- Модальное окно добавления операции -->
+    <div id="txModal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity">
+        <div class="bg-gray-900 border border-white/10 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transform transition-transform">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modalTitle" class="text-lg font-bold">Добавить операцию</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <form id="txForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="txType" value="income">
+                
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Сумма (₽)</label>
+                    <input type="number" id="txAmount" required placeholder="0" class="w-full rounded-2xl px-4 py-3 text-lg font-semibold">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Категория</label>
+                    <select id="txCategory" class="w-full rounded-2xl px-4 py-3 text-sm">
+                        <!-- Динамически заполняется -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Комментарий (необязательно)</label>
+                    <input type="text" id="txComment" placeholder="Например: Зарплата за проект" class="w-full rounded-2xl px-4 py-3 text-sm">
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-2xl shadow-lg transition mt-2">
+                    Сохранить
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно настройки цели -->
+    <div id="goalModal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+        <div class="bg-gray-900 border border-white/10 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Настройка финансовой цели</h3>
+                <button onclick="closeGoalModal()" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <form onsubmit="handleGoalSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">На что копим?</label>
+                    <input type="text" id="goalTitleInput" required class="w-full rounded-2xl px-4 py-3 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Целевая сумма (₽)</label>
+                    <input type="number" id="goalTargetInput" required class="w-full rounded-2xl px-4 py-3 text-sm">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-2xl shadow-lg transition mt-2">
+                    Сохранить цель
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            if (tg.setHeaderColor) tg.setHeaderColor('#0b0f19');
+        }
+
+        // Категории
+        const categories = {
+            income: ['Зеркальный доход / ЗП', 'Фриланс / Подработка', 'Подарки', 'Инвестиции', 'Прочее'],
+            expense: ['Еда и продукты', 'Жилье / Квартплата', 'Транспорт', 'Развлечения', 'Покупки / Одежда', 'Прочее']
+        };
+
+        // Состояние приложения
+        let appData = {
+            balance: 0,
+            goal: { title: 'Новый iPhone', target: 100000 },
+            transactions: [] // История транзакций
+        };
+
+        let currentChartTab = 'income';
+        let myChart = null;
+
+        // Загрузка сохраненных данных
+        function loadData() {
+            const saved = localStorage.getItem('my_finance_app_data');
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                } catch(e) { console.error(e); }
+            }
+            updateUI();
+        }
+
+        // Сохранение данных в localStorage
+        function saveData() {
+            localStorage.setItem('my_finance_app_data', JSON.stringify(appData));
+        }
+
+        // Обновление интерфейса
+        function updateUI() {
+            // Рассчет баланса на основе истории
+            let total = 0;
+            appData.transactions.forEach(tx => {
+                if (tx.type === 'income') total += tx.amount;
+                else total -= tx.amount;
+            });
+            appData.balance = total;
+
+            document.getElementById('totalBalance').innerText = total.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('currentSaved').innerText = total.toLocaleString('ru-RU') + ' ₽';
+            
+            // Цель
+            document.getElementById('goalTitleText').innerText = appData.goal.title;
+            document.getElementById('goalTargetText').innerText = appData.goal.target.toLocaleString('ru-RU') + ' ₽';
+
+            let percent = appData.goal.target > 0 ? Math.min(100, Math.max(0, (total / appData.goal.target) * 100)) : 0;
+            document.getElementById('goalPercent').innerText = percent.toFixed(1) + '%';
+            document.getElementById('goalProgressBar').style.width = percent + '%';
+
+            // Список транзакций
+            renderTransactions();
+            // График
+            updateChart();
+            saveData();
+        }
+
+        // Рендер истории операций
+        function renderTransactions() {
+            const listEl = document.getElementById('transactionsList');
+            document.getElementById('txCount').innerText = `${appData.transactions.length} записей`;
+
+            if (appData.transactions.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-6 text-gray-500 text-xs">История пока пуста</div>`;
+                return;
+            }
+
+            let html = '';
+            // Сортировка: новые сверху
+            const sortedTx = [...appData.transactions].reverse();
+
+            sortedTx.forEach((tx) => {
+                const isInc = tx.type === 'income';
+                const sign = isInc ? '+' : '-';
+                const colorClass = isInc ? 'text-iosGreen' : 'text-iosRed';
+                const bgIcon = isInc ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400';
+                const icon = isInc ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+
+                html += `
+                    <div class="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl ${bgIcon} flex items-center justify-center text-sm">
+                                <i class="fa-solid ${icon}"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-semibold text-white">${tx.category}</h4>
+                                <p class="text-[10px] text-gray-400">${tx.comment || 'Без комментария'} • ${tx.date}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold ${colorClass}">${sign}${tx.amount.toLocaleString('ru-RU')} ₽</span>
+                            <button onclick="deleteTx('${tx.id}')" class="text-gray-500 hover:text-red-400 text-xs p-1"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html;
+        }
+
+        // Удаление транзакции
+        function deleteTx(id) {
+            appData.transactions = appData.transactions.filter(t => t.id !== id);
+            updateUI();
+        }
+
+        // Открытие модалки добавления
+        function openModal(type) {
+            document.getElementById('txType').value = type;
+            document.getElementById('modalTitle').innerText = type === 'income' ? 'Добавить доход' : 'Добавить расход';
+            
+            const select = document.getElementById('txCategory');
+            select.innerHTML = '';
+            categories[type].forEach(cat => {
+                select.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+
+            document.getElementById('txAmount').value = '';
+            document.getElementById('txComment').value = '';
+            document.getElementById('txModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('txModal').classList.add('hidden');
+        }
+
+        // Обработка формы добавления транзакции
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const type = document.getElementById('txType').value;
+            const amount = parseFloat(document.getElementById('txAmount').value);
+            const category = document.getElementById('txCategory').value;
+            const comment = document.getElementById('txComment').value.trim();
+
+            if (!amount || amount <= 0) return;
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+            const newTx = {
+                id: Date.now().toString(),
+                type,
+                amount,
+                category,
+                comment,
+                date: dateStr
+            };
+
+            appData.transactions.push(newTx);
+            closeModal();
+            updateUI();
+        }
+
+        // Модалка цели
+        function openGoalModal() {
+            document.getElementById('goalTitleInput').value = appData.goal.title;
+            document.getElementById('goalTargetInput').value = appData.goal.target;
+            document.getElementById('goalModal').classList.remove('hidden');
+        }
+        function closeGoalModal() {
+            document.getElementById('goalModal').classList.add('hidden');
+        }
+        function handleGoalSubmit(e) {
+            e.preventDefault();
+            appData.goal.title = document.getElementById('goalTitleInput').value;
+            appData.goal.target = parseFloat(document.getElementById('goalTargetInput').value) || 0;
+            closeGoalModal();
+            updateUI();
+        }
+
+        // Переключение вкладок графика
+        function switchChartTab(tab) {
+            currentChartTab = tab;
+            if (tab === 'income') {
+                document.getElementById('chartTabIncome').className = "px-3 py-1 rounded-lg bg-blue-600 text-white transition font-medium";
+                document.getElementById('chartTabExpense').className = "px-3 py-1 rounded-lg text-gray-400 transition font-medium";
+            } else {
+                document.getElementById('chartTabIncome').className = "px-3 py-1 rounded-lg text-gray-400 transition font-medium";
+                document.getElementById('chartTabExpense').className = "px-3 py-1 rounded-lg bg-blue-600 text-white transition font-medium";
+            }
+            updateChart();
+        }
+
+        // Построение графика
+        function updateChart() {
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            
+            // Фильтруем транзакции по текущей вкладке
+            const filtered = appData.transactions.filter(t => t.type === currentChartTab);
+            
+            // Суммируем по категориям
+            const summary = {};
+            filtered.forEach(t => {
+                summary[t.category] = (summary[t.category] || 0) + t.amount;
+            });
+
+            const labels = Object.keys(summary);
+            const data = Object.values(summary);
+
+            if (myChart) myChart.destroy();
+
+            if (labels.length === 0) {
+                // Пустой график
+                myChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Нет данных'],
+                        datasets: [{ data: [1], backgroundColor: ['#1f293d'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+                return;
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#0a84ff', '#30d158', '#ff9f0a', '#bf5af2', '#ff453a', '#64d2ff'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // Экспорт и импорт бэкапов
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `finance_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSON(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        appData = JSON.parse(e.target.result);
+                        updateUI();
+                        alert('История успешно восстановлена!');
+                    } catch (err) {
+                        alert('Ошибка чтения файла бэкапа.');
+                    }
+                };
+            }
+        }
+
+        function resetData() {
+            if (confirm('Сбросить все данные и историю операций?')) {
+                appData = { balance: 0, goal: { title: 'Новый iPhone', target: 100000 }, transactions: [] };
+                updateUI();
+            }
+        }
+
+        // Запуск при загрузке
+        loadData();
+    </script>
 </body>
 </html>
